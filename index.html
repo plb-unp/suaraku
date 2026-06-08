@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SuarAku – Papan Komunikasi Visual</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;900&family=Fredoka+One&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #FFF8F0;
+    --card-bg: #FFFFFF;
+    --shadow: 0 6px 24px rgba(0,0,0,0.10);
+    --shadow-active: 0 2px 8px rgba(0,0,0,0.12);
+    --radius: 22px;
+    --font-title: 'Fredoka One', cursive;
+    --font-body:  'Nunito', sans-serif;
+    --text: #2D2D2D;
+    --text-soft: #6B6B6B;
+    --border: #EEE8E0;
+
+    --c-makan:         #FF6B35; --c-makan-bg:         #FFF0EB;
+    --c-rawat:         #2196F3; --c-rawat-bg:         #EBF4FF;
+    --c-aktivitas:     #9C27B0; --c-aktivitas-bg:     #F3E5F5;
+    --c-tubuh:         #E91E63; --c-tubuh-bg:         #FCE4EC;
+    --c-emosi:         #FF9800; --c-emosi-bg:         #FFF3E0;
+    --c-keluarga:      #4CAF50; --c-keluarga-bg:      #E8F5E9;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: var(--font-body); background: var(--bg); color: var(--text); min-height: 100vh; overflow-x: hidden; }
+
+  /* ── HEADER ── */
+  header {
+    background: linear-gradient(135deg, #FF6B35 0%, #FF9800 50%, #FFD54F 100%);
+    padding: 18px 24px 16px;
+    display: flex; align-items: center; justify-content: space-between;
+    box-shadow: 0 4px 16px rgba(255,107,53,0.25);
+    position: sticky; top: 0; z-index: 100;
+  }
+  header .logo { font-family: var(--font-title); font-size: clamp(1.6rem,5vw,2.2rem); color:#fff; text-shadow:0 2px 6px rgba(0,0,0,0.18); }
+  header .tagline { font-size: clamp(0.7rem,2.5vw,0.85rem); color:rgba(255,255,255,0.92); font-weight:700; text-align:right; line-height:1.3; max-width:180px; }
+
+  /* ── SPEECH BUBBLE ── */
+  #speech-area {
+    margin: 20px 16px 10px;
+    background: #fff; border-radius: 20px; padding: 14px 18px;
+    border: 2.5px solid var(--border); box-shadow: var(--shadow);
+    display: flex; align-items: center; gap: 12px; min-height: 72px;
+    transition: border-color .3s, box-shadow .3s;
+  }
+  #speech-area.speaking { border-color:#FF6B35; box-shadow:0 4px 20px rgba(255,107,53,.25); animation: pulse .6s ease-out; }
+  @keyframes pulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.012)} }
+  #speech-icon { font-size: 2.2rem; flex-shrink:0; }
+  #speech-area.speaking #speech-icon { animation: bounce .5s ease; }
+  @keyframes bounce { 0%,100%{transform:scale(1)} 50%{transform:scale(1.3)} }
+  #speech-text { font-family:var(--font-title); font-size:clamp(1rem,3.5vw,1.3rem); color:var(--text); flex:1; }
+  #speech-text.empty { color:var(--text-soft); font-family:var(--font-body); font-weight:600; font-size:.88rem; }
+  .wave-container { display:none; align-items:center; gap:3px; flex-shrink:0; }
+  .wave-container.active { display:flex; }
+  .wave-bar { width:3px; background:#FF6B35; border-radius:2px; animation: wave .8s ease-in-out infinite; }
+  .wave-bar:nth-child(1){height:8px;animation-delay:0s}
+  .wave-bar:nth-child(2){height:14px;animation-delay:.1s}
+  .wave-bar:nth-child(3){height:20px;animation-delay:.2s}
+  .wave-bar:nth-child(4){height:14px;animation-delay:.3s}
+  .wave-bar:nth-child(5){height:8px;animation-delay:.4s}
+  @keyframes wave { 0%,100%{transform:scaleY(.4)} 50%{transform:scaleY(1)} }
+  #speak-btn {
+    background:#FF6B35; color:#fff; border:none; border-radius:12px;
+    padding:8px 14px; font-size:1.1rem; cursor:pointer; flex-shrink:0;
+    transition:background .2s,transform .1s;
+  }
+  #speak-btn:hover{background:#e55a28} #speak-btn:active{transform:scale(.93)}
+
+  /* ── TABS ── */
+  .tabs-wrapper { overflow-x:auto; scrollbar-width:none; padding:4px 16px 0; }
+  .tabs-wrapper::-webkit-scrollbar{display:none}
+  .tabs { display:flex; gap:8px; width:max-content; padding-bottom:2px; }
+  .tab-btn {
+    background:var(--card-bg); border:2.5px solid var(--border); border-radius:30px;
+    padding:10px 18px; font-family:var(--font-body); font-size:clamp(.78rem,2.5vw,.9rem);
+    font-weight:700; cursor:pointer; white-space:nowrap; color:var(--text-soft);
+    transition:all .2s; display:flex; align-items:center; gap:6px;
+  }
+  .tab-btn:hover{border-color:#ccc;color:var(--text)}
+  .tab-btn.active{color:#fff;border-color:transparent;box-shadow:0 4px 14px rgba(0,0,0,.15);transform:translateY(-1px)}
+  .tab-btn.active[data-cat="makan"]    {background:var(--c-makan)}
+  .tab-btn.active[data-cat="rawat"]    {background:var(--c-rawat)}
+  .tab-btn.active[data-cat="aktivitas"]{background:var(--c-aktivitas)}
+  .tab-btn.active[data-cat="tubuh"]    {background:var(--c-tubuh)}
+  .tab-btn.active[data-cat="emosi"]    {background:var(--c-emosi)}
+  .tab-btn.active[data-cat="keluarga"] {background:var(--c-keluarga)}
+
+  /* ── GRID ── */
+  .grid-container { padding:16px 16px 100px; }
+  .cat-panel { display:none; }
+  .cat-panel.active { display:grid; }
+  .cat-panel { grid-template-columns:repeat(auto-fill,minmax(140px,1fr)); gap:14px; }
+  @media(max-width:400px){ .cat-panel{grid-template-columns:repeat(2,1fr);gap:10px} }
+  @media(min-width:700px){ .cat-panel{grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:18px} }
+  @media(min-width:1024px){ .cat-panel{grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:20px} .grid-container{padding:20px 32px 80px} }
+
+  /* ── CARD ── */
+  .card {
+    background:var(--tint-bg,#f5f5f5);
+    border-radius:var(--radius); box-shadow:var(--shadow);
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    gap:10px; padding:14px 12px 14px; cursor:pointer;
+    border:3px solid transparent;
+    transition:transform .15s, box-shadow .15s, border-color .15s;
+    user-select:none; -webkit-tap-highlight-color:transparent;
+    position:relative; overflow:hidden;
+  }
+  .card:hover{transform:translateY(-3px);box-shadow:0 10px 28px rgba(0,0,0,.13)}
+  .card:active{transform:scale(.95);box-shadow:var(--shadow-active)}
+  [data-cat="makan"]    .card{--tint:var(--c-makan);    --tint-bg:var(--c-makan-bg)}
+  [data-cat="rawat"]    .card{--tint:var(--c-rawat);    --tint-bg:var(--c-rawat-bg)}
+  [data-cat="aktivitas"].card{--tint:var(--c-aktivitas);--tint-bg:var(--c-aktivitas-bg)}
+  [data-cat="tubuh"]    .card{--tint:var(--c-tubuh);    --tint-bg:var(--c-tubuh-bg)}
+  [data-cat="emosi"]    .card{--tint:var(--c-emosi);    --tint-bg:var(--c-emosi-bg)}
+  [data-cat="keluarga"] .card{--tint:var(--c-keluarga); --tint-bg:var(--c-keluarga-bg)}
+
+  /* ── CARD IMAGE ── */
+  .card-img-wrap {
+    width: clamp(72px,18vw,100px);
+    height: clamp(72px,18vw,100px);
+    border-radius: 16px;
+    overflow: hidden;
+    background: rgba(255,255,255,0.6);
+    display: flex; align-items:center; justify-content:center;
+    flex-shrink: 0;
+  }
+  .card-img-wrap img {
+    width:100%; height:100%; object-fit:cover;
+    transition: transform .2s;
+  }
+  .card:hover .card-img-wrap img { transform:scale(1.08); }
+  /* Fallback emoji shown when image fails to load */
+  .card-img-wrap .fallback-emoji {
+    font-size: clamp(2.4rem,7vw,3.2rem);
+    display: none;
+    line-height:1;
+  }
+  .card-img-wrap img.error { display:none; }
+  .card-img-wrap img.error + .fallback-emoji { display:block; }
+
+  .card-label {
+    font-family:var(--font-body); font-size:clamp(.76rem,2.5vw,.88rem);
+    font-weight:800; text-align:center; color:var(--text); line-height:1.35;
+  }
+
+  /* ── PLAYING anim ── */
+  .card.playing .card-img-wrap { animation:wiggle .4s ease; }
+  @keyframes wiggle{0%,100%{transform:rotate(0)scale(1)}25%{transform:rotate(-7deg)scale(1.1)}75%{transform:rotate(7deg)scale(1.1)}}
+
+  /* ── RIPPLE ── */
+  .ripple{position:absolute;border-radius:50%;background:rgba(255,255,255,.55);transform:scale(0);animation:ripple-anim .5s linear;pointer-events:none}
+  @keyframes ripple-anim{to{transform:scale(4);opacity:0}}
+
+  /* ── BOTTOM HINT ── */
+  .bottom-hint{
+    position:fixed;bottom:0;left:0;right:0;
+    background:rgba(255,248,240,.95);backdrop-filter:blur(8px);
+    padding:10px 16px 14px;text-align:center;
+    font-size:.75rem;color:var(--text-soft);font-weight:600;
+    border-top:1px solid var(--border);
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">🗣️ SuarAku</div>
+  <div class="tagline">Papan Komunikasi Visual<br>untuk Remaja</div>
+</header>
+
+<div id="speech-area">
+  <span id="speech-icon">💬</span>
+  <span id="speech-text" class="empty">Tekan gambar untuk berbicara…</span>
+  <div class="wave-container" id="wave">
+    <div class="wave-bar"></div><div class="wave-bar"></div>
+    <div class="wave-bar"></div><div class="wave-bar"></div>
+    <div class="wave-bar"></div>
+  </div>
+  <button id="speak-btn" title="Ulangi suara" aria-label="Ulangi suara">🔊</button>
+</div>
+
+<div class="tabs-wrapper">
+  <div class="tabs" role="tablist">
+    <button class="tab-btn active" data-cat="makan"     onclick="switchTab('makan',this)">🍽️ Makan &amp; Minum</button>
+    <button class="tab-btn"        data-cat="rawat"     onclick="switchTab('rawat',this)">🚿 Perawatan Diri</button>
+    <button class="tab-btn"        data-cat="aktivitas" onclick="switchTab('aktivitas',this)">🎮 Aktivitas</button>
+    <button class="tab-btn"        data-cat="tubuh"     onclick="switchTab('tubuh',this)">😴 Kondisi Tubuh</button>
+    <button class="tab-btn"        data-cat="emosi"     onclick="switchTab('emosi',this)">😊 Perasaan</button>
+    <button class="tab-btn"        data-cat="keluarga"  onclick="switchTab('keluarga',this)">👨‍👩‍👦 Keluarga</button>
+  </div>
+</div>
+
+<div class="grid-container">
+
+  <!-- ══ MAKAN & MINUM ══ -->
+  <div class="cat-panel active" id="panel-makan" data-cat="makan">
+    <div class="card" onclick="playCard(this,'makan','Saya ingin makan.','🍽️')">
+      <div class="card-img-wrap"><img src="assets/images/makan.png" alt="Makan" onerror="imgErr(this)"><span class="fallback-emoji">🍽️</span></div>
+      <div class="card-label">Saya ingin makan</div>
+    </div>
+    <div class="card" onclick="playCard(this,'minum','Saya ingin minum.','🥤')">
+      <div class="card-img-wrap"><img src="assets/images/minum.png" alt="Minum" onerror="imgErr(this)"><span class="fallback-emoji">🥤</span></div>
+      <div class="card-label">Saya ingin minum</div>
+    </div>
+    <div class="card" onclick="playCard(this,'camilan','Saya ingin camilan.','🍪')">
+      <div class="card-img-wrap"><img src="assets/images/camilan.png" alt="Camilan" onerror="imgErr(this)"><span class="fallback-emoji">🍪</span></div>
+      <div class="card-label">Saya ingin camilan</div>
+    </div>
+    <div class="card" onclick="playCard(this,'kenyang','Saya sudah kenyang.','✋')">
+      <div class="card-img-wrap"><img src="assets/images/kenyang.png" alt="Kenyang" onerror="imgErr(this)"><span class="fallback-emoji">✋</span></div>
+      <div class="card-label">Saya sudah kenyang</div>
+    </div>
+    <div class="card" onclick="playCard(this,'minum_air','Saya ingin minum air putih.','💧')">
+      <div class="card-img-wrap"><img src="assets/images/minum_air.png" alt="Minum Air" onerror="imgErr(this)"><span class="fallback-emoji">💧</span></div>
+      <div class="card-label">Saya ingin minum air putih</div>
+    </div>
+    <div class="card" onclick="playCard(this,'makan_nasi','Saya ingin makan nasi.','🍚')">
+      <div class="card-img-wrap"><img src="assets/images/makan_nasi.png" alt="Makan Nasi" onerror="imgErr(this)"><span class="fallback-emoji">🍚</span></div>
+      <div class="card-label">Saya ingin makan nasi</div>
+    </div>
+    <div class="card" onclick="playCard(this,'makan_buah','Saya ingin makan buah.','🍎')">
+      <div class="card-img-wrap"><img src="assets/images/makan_buah.png" alt="Makan Buah" onerror="imgErr(this)"><span class="fallback-emoji">🍎</span></div>
+      <div class="card-label">Saya ingin makan buah</div>
+    </div>
+    <div class="card" onclick="playCard(this,'tidak_lapar','Saya tidak lapar.','🙅')">
+      <div class="card-img-wrap"><img src="assets/images/tidak_lapar.png" alt="Tidak Lapar" onerror="imgErr(this)"><span class="fallback-emoji">🙅</span></div>
+      <div class="card-label">Saya tidak lapar</div>
+    </div>
+    <div class="card" onclick="playCard(this,'minum_susu','Saya ingin minum susu.','🥛')">
+      <div class="card-img-wrap"><img src="assets/images/minum_susu.png" alt="Minum Susu" onerror="imgErr(this)"><span class="fallback-emoji">🥛</span></div>
+      <div class="card-label">Saya ingin minum susu</div>
+    </div>
+    <div class="card" onclick="playCard(this,'makanan_panas','Makanannya terlalu panas.','🔥')">
+      <div class="card-img-wrap"><img src="assets/images/makanan_panas.png" alt="Makanan Panas" onerror="imgErr(this)"><span class="fallback-emoji">🔥</span></div>
+      <div class="card-label">Makanannya terlalu panas</div>
+    </div>
+  </div>
+
+  <!-- ══ PERAWATAN DIRI ══ -->
+  <div class="cat-panel" id="panel-rawat" data-cat="rawat">
+    <div class="card" onclick="playCard(this,'mandi','Saya ingin mandi.','🚿')">
+      <div class="card-img-wrap"><img src="assets/images/mandi.png" alt="Mandi" onerror="imgErr(this)"><span class="fallback-emoji">🚿</span></div>
+      <div class="card-label">Saya ingin mandi</div>
+    </div>
+    <div class="card" onclick="playCard(this,'toilet','Saya ingin ke toilet.','🚽')">
+      <div class="card-img-wrap"><img src="assets/images/toilet.png" alt="Toilet" onerror="imgErr(this)"><span class="fallback-emoji">🚽</span></div>
+      <div class="card-label">Saya ingin ke toilet</div>
+    </div>
+    <div class="card" onclick="playCard(this,'sikat_gigi','Saya ingin sikat gigi.','🪥')">
+      <div class="card-img-wrap"><img src="assets/images/sikat_gigi.png" alt="Sikat Gigi" onerror="imgErr(this)"><span class="fallback-emoji">🪥</span></div>
+      <div class="card-label">Saya ingin sikat gigi</div>
+    </div>
+    <div class="card" onclick="playCard(this,'ganti_baju','Saya ingin berganti pakaian.','👕')">
+      <div class="card-img-wrap"><img src="assets/images/ganti_baju.png" alt="Ganti Baju" onerror="imgErr(this)"><span class="fallback-emoji">👕</span></div>
+      <div class="card-label">Saya ingin ganti baju</div>
+    </div>
+    <div class="card" onclick="playCard(this,'cuci_tangan','Saya ingin cuci tangan.','🙌')">
+      <div class="card-img-wrap"><img src="assets/images/cuci_tangan.png" alt="Cuci Tangan" onerror="imgErr(this)"><span class="fallback-emoji">🙌</span></div>
+      <div class="card-label">Saya ingin cuci tangan</div>
+    </div>
+    <div class="card" onclick="playCard(this,'potong_kuku','Saya ingin potong kuku.','✂️')">
+      <div class="card-img-wrap"><img src="assets/images/potong_kuku.png" alt="Potong Kuku" onerror="imgErr(this)"><span class="fallback-emoji">✂️</span></div>
+      <div class="card-label">Saya ingin potong kuku</div>
+    </div>
+    <div class="card" onclick="playCard(this,'keramas','Saya ingin keramas.','💆')">
+      <div class="card-img-wrap"><img src="assets/images/keramas.png" alt="Keramas" onerror="imgErr(this)"><span class="fallback-emoji">💆</span></div>
+      <div class="card-label">Saya ingin keramas</div>
+    </div>
+    <div class="card" onclick="playCard(this,'pakai_obat','Saya ingin pakai obat.','💊')">
+      <div class="card-img-wrap"><img src="assets/images/pakai_obat.png" alt="Pakai Obat" onerror="imgErr(this)"><span class="fallback-emoji">💊</span></div>
+      <div class="card-label">Saya ingin pakai obat</div>
+    </div>
+  </div>
+
+  <!-- ══ AKTIVITAS ══ -->
+  <div class="cat-panel" id="panel-aktivitas" data-cat="aktivitas">
+    <div class="card" onclick="playCard(this,'nonton_tv','Saya ingin menonton televisi.','📺')">
+      <div class="card-img-wrap"><img src="assets/images/nonton_tv.png" alt="Nonton TV" onerror="imgErr(this)"><span class="fallback-emoji">📺</span></div>
+      <div class="card-label">Saya ingin nonton TV</div>
+    </div>
+    <div class="card" onclick="playCard(this,'main_gawai','Saya ingin bermain gawai.','📱')">
+      <div class="card-img-wrap"><img src="assets/images/main_gawai.png" alt="Main Gawai" onerror="imgErr(this)"><span class="fallback-emoji">📱</span></div>
+      <div class="card-label">Saya ingin main gawai</div>
+    </div>
+    <div class="card" onclick="playCard(this,'dengar_musik','Saya ingin mendengarkan musik.','🎵')">
+      <div class="card-img-wrap"><img src="assets/images/dengar_musik.png" alt="Dengar Musik" onerror="imgErr(this)"><span class="fallback-emoji">🎵</span></div>
+      <div class="card-label">Saya ingin dengar musik</div>
+    </div>
+    <div class="card" onclick="playCard(this,'baca_buku','Saya ingin membaca buku.','📚')">
+      <div class="card-img-wrap"><img src="assets/images/baca_buku.png" alt="Baca Buku" onerror="imgErr(this)"><span class="fallback-emoji">📚</span></div>
+      <div class="card-label">Saya ingin baca buku</div>
+    </div>
+    <div class="card" onclick="playCard(this,'bermain','Saya ingin bermain.','🎮')">
+      <div class="card-img-wrap"><img src="assets/images/bermain.png" alt="Bermain" onerror="imgErr(this)"><span class="fallback-emoji">🎮</span></div>
+      <div class="card-label">Saya ingin bermain</div>
+    </div>
+    <div class="card" onclick="playCard(this,'keluar_rumah','Saya ingin keluar rumah.','🚶')">
+      <div class="card-img-wrap"><img src="assets/images/keluar_rumah.png" alt="Keluar Rumah" onerror="imgErr(this)"><span class="fallback-emoji">🚶</span></div>
+      <div class="card-label">Saya ingin keluar rumah</div>
+    </div>
+    <div class="card" onclick="playCard(this,'menggambar','Saya ingin menggambar.','🎨')">
+      <div class="card-img-wrap"><img src="assets/images/menggambar.png" alt="Menggambar" onerror="imgErr(this)"><span class="fallback-emoji">🎨</span></div>
+      <div class="card-label">Saya ingin menggambar</div>
+    </div>
+    <div class="card" onclick="playCard(this,'jalan_jalan','Saya ingin jalan-jalan.','🌳')">
+      <div class="card-img-wrap"><img src="assets/images/jalan_jalan.png" alt="Jalan-jalan" onerror="imgErr(this)"><span class="fallback-emoji">🌳</span></div>
+      <div class="card-label">Saya ingin jalan-jalan</div>
+    </div>
+    <div class="card" onclick="playCard(this,'foto_foto','Saya ingin berfoto.','📷')">
+      <div class="card-img-wrap"><img src="assets/images/foto_foto.png" alt="Berfoto" onerror="imgErr(this)"><span class="fallback-emoji">📷</span></div>
+      <div class="card-label">Saya ingin berfoto</div>
+    </div>
+    <div class="card" onclick="playCard(this,'video_call','Saya ingin video call.','📹')">
+      <div class="card-img-wrap"><img src="assets/images/video_call.png" alt="Video Call" onerror="imgErr(this)"><span class="fallback-emoji">📹</span></div>
+      <div class="card-label">Saya ingin video call</div>
+    </div>
+  </div>
+
+  <!-- ══ KONDISI TUBUH ══ -->
+  <div class="cat-panel" id="panel-tubuh" data-cat="tubuh">
+    <div class="card" onclick="playCard(this,'lelah','Saya lelah.','😮‍💨')">
+      <div class="card-img-wrap"><img src="assets/images/lelah.png" alt="Lelah" onerror="imgErr(this)"><span class="fallback-emoji">😮‍💨</span></div>
+      <div class="card-label">Saya lelah</div>
+    </div>
+    <div class="card" onclick="playCard(this,'mengantuk','Saya mengantuk.','😴')">
+      <div class="card-img-wrap"><img src="assets/images/mengantuk.png" alt="Mengantuk" onerror="imgErr(this)"><span class="fallback-emoji">😴</span></div>
+      <div class="card-label">Saya mengantuk</div>
+    </div>
+    <div class="card" onclick="playCard(this,'sakit','Saya merasa sakit.','🤒')">
+      <div class="card-img-wrap"><img src="assets/images/sakit.png" alt="Sakit" onerror="imgErr(this)"><span class="fallback-emoji">🤒</span></div>
+      <div class="card-label">Saya merasa sakit</div>
+    </div>
+    <div class="card" onclick="playCard(this,'tidak_nyaman','Saya tidak nyaman.','😣')">
+      <div class="card-img-wrap"><img src="assets/images/tidak_nyaman.png" alt="Tidak Nyaman" onerror="imgErr(this)"><span class="fallback-emoji">😣</span></div>
+      <div class="card-label">Saya tidak nyaman</div>
+    </div>
+    <div class="card" onclick="playCard(this,'istirahat','Saya ingin istirahat.','🛌')">
+      <div class="card-img-wrap"><img src="assets/images/istirahat.png" alt="Istirahat" onerror="imgErr(this)"><span class="fallback-emoji">🛌</span></div>
+      <div class="card-label">Saya ingin istirahat</div>
+    </div>
+    <div class="card" onclick="playCard(this,'pusing','Kepala saya pusing.','🥴')">
+      <div class="card-img-wrap"><img src="assets/images/pusing.png" alt="Pusing" onerror="imgErr(this)"><span class="fallback-emoji">🥴</span></div>
+      <div class="card-label">Kepala saya pusing</div>
+    </div>
+    <div class="card" onclick="playCard(this,'perut_sakit','Perut saya sakit.','🤢')">
+      <div class="card-img-wrap"><img src="assets/images/perut_sakit.png" alt="Perut Sakit" onerror="imgErr(this)"><span class="fallback-emoji">🤢</span></div>
+      <div class="card-label">Perut saya sakit</div>
+    </div>
+    <div class="card" onclick="playCard(this,'demam','Saya demam.','🌡️')">
+      <div class="card-img-wrap"><img src="assets/images/demam.png" alt="Demam" onerror="imgErr(this)"><span class="fallback-emoji">🌡️</span></div>
+      <div class="card-label">Saya demam</div>
+    </div>
+    <div class="card" onclick="playCard(this,'gatal','Badan saya gatal.','🤧')">
+      <div class="card-img-wrap"><img src="assets/images/gatal.png" alt="Gatal" onerror="imgErr(this)"><span class="fallback-emoji">🤧</span></div>
+      <div class="card-label">Badan saya gatal</div>
+    </div>
+    <div class="card" onclick="playCard(this,'merasa_baik','Saya merasa baik-baik saja.','😌')">
+      <div class="card-img-wrap"><img src="assets/images/merasa_baik.png" alt="Merasa Baik" onerror="imgErr(this)"><span class="fallback-emoji">😌</span></div>
+      <div class="card-label">Saya merasa baik-baik saja</div>
+    </div>
+    <div class="card" onclick="playCard(this,'terluka','Saya terluka.','🩹')">
+      <div class="card-img-wrap"><img src="assets/images/terluka.png" alt="Terluka" onerror="imgErr(this)"><span class="fallback-emoji">🩹</span></div>
+      <div class="card-label">Saya terluka</div>
+    </div>
+    <div class="card" onclick="playCard(this,'dingin','Saya kedinginan.','🥶')">
+      <div class="card-img-wrap"><img src="assets/images/dingin.png" alt="Kedinginan" onerror="imgErr(this)"><span class="fallback-emoji">🥶</span></div>
+      <div class="card-label">Saya kedinginan</div>
+    </div>
+  </div>
+
+  <!-- ══ PERASAAN & EMOSI ══ -->
+  <div class="cat-panel" id="panel-emosi" data-cat="emosi">
+    <div class="card" onclick="playCard(this,'senang','Saya senang.','😊')">
+      <div class="card-img-wrap"><img src="assets/images/senang.png" alt="Senang" onerror="imgErr(this)"><span class="fallback-emoji">😊</span></div>
+      <div class="card-label">Saya senang</div>
+    </div>
+    <div class="card" onclick="playCard(this,'sedih','Saya sedih.','😢')">
+      <div class="card-img-wrap"><img src="assets/images/sedih.png" alt="Sedih" onerror="imgErr(this)"><span class="fallback-emoji">😢</span></div>
+      <div class="card-label">Saya sedih</div>
+    </div>
+    <div class="card" onclick="playCard(this,'marah','Saya marah.','😠')">
+      <div class="card-img-wrap"><img src="assets/images/marah.png" alt="Marah" onerror="imgErr(this)"><span class="fallback-emoji">😠</span></div>
+      <div class="card-label">Saya marah</div>
+    </div>
+    <div class="card" onclick="playCard(this,'cemas','Saya cemas.','😰')">
+      <div class="card-img-wrap"><img src="assets/images/cemas.png" alt="Cemas" onerror="imgErr(this)"><span class="fallback-emoji">😰</span></div>
+      <div class="card-label">Saya cemas</div>
+    </div>
+    <div class="card" onclick="playCard(this,'butuh_bantuan','Saya membutuhkan bantuan.','🙏')">
+      <div class="card-img-wrap"><img src="assets/images/butuh_bantuan.png" alt="Butuh Bantuan" onerror="imgErr(this)"><span class="fallback-emoji">🙏</span></div>
+      <div class="card-label">Saya butuh bantuan</div>
+    </div>
+    <div class="card" onclick="playCard(this,'bosan','Saya bosan.','😑')">
+      <div class="card-img-wrap"><img src="assets/images/bosan.png" alt="Bosan" onerror="imgErr(this)"><span class="fallback-emoji">😑</span></div>
+      <div class="card-label">Saya bosan</div>
+    </div>
+    <div class="card" onclick="playCard(this,'takut','Saya takut.','😨')">
+      <div class="card-img-wrap"><img src="assets/images/takut.png" alt="Takut" onerror="imgErr(this)"><span class="fallback-emoji">😨</span></div>
+      <div class="card-label">Saya takut</div>
+    </div>
+    <div class="card" onclick="playCard(this,'kagum','Saya kagum.','🤩')">
+      <div class="card-img-wrap"><img src="assets/images/kagum.png" alt="Kagum" onerror="imgErr(this)"><span class="fallback-emoji">🤩</span></div>
+      <div class="card-label">Saya kagum</div>
+    </div>
+    <div class="card" onclick="playCard(this,'malu','Saya malu.','😳')">
+      <div class="card-img-wrap"><img src="assets/images/malu.png" alt="Malu" onerror="imgErr(this)"><span class="fallback-emoji">😳</span></div>
+      <div class="card-label">Saya malu</div>
+    </div>
+    <div class="card" onclick="playCard(this,'kecewa','Saya kecewa.','😞')">
+      <div class="card-img-wrap"><img src="assets/images/kecewa.png" alt="Kecewa" onerror="imgErr(this)"><span class="fallback-emoji">😞</span></div>
+      <div class="card-label">Saya kecewa</div>
+    </div>
+    <div class="card" onclick="playCard(this,'semangat','Saya semangat.','💪')">
+      <div class="card-img-wrap"><img src="assets/images/semangat.png" alt="Semangat" onerror="imgErr(this)"><span class="fallback-emoji">💪</span></div>
+      <div class="card-label">Saya semangat</div>
+    </div>
+    <div class="card" onclick="playCard(this,'rindu','Saya rindu.','🥹')">
+      <div class="card-img-wrap"><img src="assets/images/rindu.png" alt="Rindu" onerror="imgErr(this)"><span class="fallback-emoji">🥹</span></div>
+      <div class="card-label">Saya rindu</div>
+    </div>
+  </div>
+
+  <!-- ══ KOMUNIKASI KELUARGA ══ -->
+  <div class="cat-panel" id="panel-keluarga" data-cat="keluarga">
+    <div class="card" onclick="playCard(this,'tolong_bantu','Tolong bantu saya.','🆘')">
+      <div class="card-img-wrap"><img src="assets/images/tolong_bantu.png" alt="Tolong Bantu" onerror="imgErr(this)"><span class="fallback-emoji">🆘</span></div>
+      <div class="card-label">Tolong bantu saya</div>
+    </div>
+    <div class="card" onclick="playCard(this,'terima_kasih','Terima kasih.','🙏')">
+      <div class="card-img-wrap"><img src="assets/images/terima_kasih.png" alt="Terima Kasih" onerror="imgErr(this)"><span class="fallback-emoji">🙏</span></div>
+      <div class="card-label">Terima kasih</div>
+    </div>
+    <div class="card" onclick="playCard(this,'tidak_mau','Saya tidak mau.','🙅')">
+      <div class="card-img-wrap"><img src="assets/images/tidak_mau.png" alt="Tidak Mau" onerror="imgErr(this)"><span class="fallback-emoji">🙅</span></div>
+      <div class="card-label">Saya tidak mau</div>
+    </div>
+    <div class="card" onclick="playCard(this,'setuju','Saya setuju.','👍')">
+      <div class="card-img-wrap"><img src="assets/images/setuju.png" alt="Setuju" onerror="imgErr(this)"><span class="fallback-emoji">👍</span></div>
+      <div class="card-label">Saya setuju</div>
+    </div>
+    <div class="card" onclick="playCard(this,'bersama_ayah','Saya ingin bersama Ayah.','👨')">
+      <div class="card-img-wrap"><img src="assets/images/bersama_ayah.png" alt="Bersama Ayah" onerror="imgErr(this)"><span class="fallback-emoji">👨</span></div>
+      <div class="card-label">Saya ingin bersama Ayah</div>
+    </div>
+    <div class="card" onclick="playCard(this,'bersama_ibu','Saya ingin bersama Ibu.','👩')">
+      <div class="card-img-wrap"><img src="assets/images/bersama_ibu.png" alt="Bersama Ibu" onerror="imgErr(this)"><span class="fallback-emoji">👩</span></div>
+      <div class="card-label">Saya ingin bersama Ibu</div>
+    </div>
+    <div class="card" onclick="playCard(this,'sayang','Saya sayang kamu.','❤️')">
+      <div class="card-img-wrap"><img src="assets/images/sayang.png" alt="Sayang" onerror="imgErr(this)"><span class="fallback-emoji">❤️</span></div>
+      <div class="card-label">Saya sayang kamu</div>
+    </div>
+    <div class="card" onclick="playCard(this,'ke_dokter','Saya ingin ke dokter.','🩺')">
+      <div class="card-img-wrap"><img src="assets/images/ke_dokter.png" alt="Ke Dokter" onerror="imgErr(this)"><span class="fallback-emoji">🩺</span></div>
+      <div class="card-label">Saya ingin ke dokter</div>
+    </div>
+  </div>
+
+</div>
+
+<div class="bottom-hint">✨ Tekan gambar → sistem akan berbicara untuk kamu</div>
+
+<script>
+  // ── State ──────────────────────────────────────────
+  let currentMsg   = '';
+  let currentEmoji = '💬';
+  let audioCache   = {};
+
+  const speechArea = document.getElementById('speech-area');
+  const speechText = document.getElementById('speech-text');
+  const speechIcon = document.getElementById('speech-icon');
+  const waveEl     = document.getElementById('wave');
+  const speakBtn   = document.getElementById('speak-btn');
+
+  // ── Image error fallback ───────────────────────────
+  function imgErr(img) {
+    img.classList.add('error');
+  }
+
+  // ── Main play function ─────────────────────────────
+  function playCard(cardEl, key, msg, emoji) {
+    currentMsg   = msg;
+    currentEmoji = emoji;
+
+    // Update bubble
+    speechText.textContent = msg;
+    speechText.classList.remove('empty');
+    speechIcon.textContent = emoji;
+
+    // Animate
+    speechArea.classList.remove('speaking');
+    void speechArea.offsetWidth; // reflow
+    speechArea.classList.add('speaking');
+    waveEl.classList.add('active');
+    cardEl.classList.add('playing');
+    addRipple(cardEl);
+
+    setTimeout(() => {
+      speechArea.classList.remove('speaking');
+      cardEl.classList.remove('playing');
+    }, 1300);
+
+    // Play audio
+    playAudio(key, msg);
+  }
+
+  // ── Audio: try MP3 first, fallback to TTS ─────────
+  function playAudio(key, msg) {
+    // Stop any current audio
+    stopAllAudio();
+
+    const src = 'assets/audio/' + key + '.mp3';
+
+    // Use cached Audio object or create new
+    if (!audioCache[key]) {
+      audioCache[key] = new Audio(src);
+    }
+    const audio = audioCache[key];
+    audio.currentTime = 0;
+
+    audio.onended = () => waveEl.classList.remove('active');
+    audio.onerror = () => {
+      // MP3 not found – fallback to browser TTS
+      doTTS(msg);
+    };
+
+    audio.play().catch(() => doTTS(msg));
+  }
+
+  function stopAllAudio() {
+    Object.values(audioCache).forEach(a => { try { a.pause(); a.currentTime = 0; } catch(e){} });
+    if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+    waveEl.classList.remove('active');
+  }
+
+  // ── TTS fallback ───────────────────────────────────
+  function doTTS(msg) {
+    if (!('speechSynthesis' in window)) { waveEl.classList.remove('active'); return; }
+    window.speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(msg);
+    u.lang = 'id-ID'; u.rate = 0.88; u.pitch = 1.05; u.volume = 1;
+    const idVoice = speechSynthesis.getVoices().find(v => v.lang.startsWith('id'));
+    if (idVoice) u.voice = idVoice;
+    u.onend  = () => waveEl.classList.remove('active');
+    u.onerror= () => waveEl.classList.remove('active');
+    speechSynthesis.speak(u);
+  }
+
+  // ── Repeat button ──────────────────────────────────
+  speakBtn.addEventListener('click', () => {
+    if (!currentMsg) return;
+    speechArea.classList.remove('speaking');
+    void speechArea.offsetWidth;
+    speechArea.classList.add('speaking');
+    waveEl.classList.add('active');
+    setTimeout(() => speechArea.classList.remove('speaking'), 1300);
+    // Re-derive key from current emoji (simpler: replay last key)
+    // We store last key separately
+    if (lastKey) playAudio(lastKey, currentMsg);
+    else doTTS(currentMsg);
+  });
+
+  let lastKey = '';
+  const _origPlay = playCard;
+  // Patch to capture lastKey
+  window.playCard = function(cardEl, key, msg, emoji) {
+    lastKey = key;
+    _origPlay(cardEl, key, msg, emoji);
+  };
+
+  // ── Tab switch ─────────────────────────────────────
+  function switchTab(cat, btn) {
+    document.querySelectorAll('.cat-panel').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('panel-' + cat).classList.add('active');
+    btn.classList.add('active');
+    btn.scrollIntoView({ behavior:'smooth', block:'nearest', inline:'center' });
+  }
+
+  // ── Ripple ─────────────────────────────────────────
+  function addRipple(el) {
+    const r = document.createElement('span');
+    r.className = 'ripple';
+    const size = Math.max(el.offsetWidth, el.offsetHeight) * 2;
+    r.style.width = r.style.height = size + 'px';
+    r.style.left  = (el.offsetWidth  / 2 - size / 2) + 'px';
+    r.style.top   = (el.offsetHeight / 2 - size / 2) + 'px';
+    el.appendChild(r);
+    setTimeout(() => r.remove(), 600);
+  }
+
+  // Load voices
+  if (speechSynthesis.onvoiceschanged !== undefined) {
+    speechSynthesis.onvoiceschanged = () => {};
+  }
+</script>
+</body>
+</html>
